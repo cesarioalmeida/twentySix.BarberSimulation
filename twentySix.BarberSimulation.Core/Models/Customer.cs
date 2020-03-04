@@ -14,5 +14,7 @@
         public double ArrivalTime { get; set; }
 
         public double ServiceTime { get; set; }
+
+        public double ToleranceTime { get; set; }
     }
 }

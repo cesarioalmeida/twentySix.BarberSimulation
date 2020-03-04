@@ -45,8 +45,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enums\WorkingStatus.cs" />
+    <Compile Include="Events\TimeChangedEvent.cs" />
     <Compile Include="Events\CustomerLeftEvent.cs" />
     <Compile Include="Events\CustomerArrivedEvent.cs" />
+    <Compile Include="Framework\ExtendedQueue.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\Barber.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -54,5 +56,6 @@
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -6,11 +6,11 @@
     using System.Timers;
 
     using Redbus;
-    using Redbus.Events;
     using Redbus.Interfaces;
 
     using twentySix.BarberSimulation.Core.Enums;
     using twentySix.BarberSimulation.Core.Events;
+    using twentySix.BarberSimulation.Core.Framework;
     using twentySix.BarberSimulation.Core.Models;
 
     public class Program
@@ -23,13 +23,13 @@
 
         private static readonly List<Barber> Barbers = new List<Barber>();
 
-        private static readonly Queue<Customer> CustomerQueue = new Queue<Customer>();
+        private static readonly ExtendedQueue<Customer> CustomerQueue = new ExtendedQueue<Customer>();
 
         private static readonly Random RandomGenerator = new Random();
 
         private static readonly List<double> TotalTime = new List<double>();
 
-        private static double earnings = 0d;
+        private static double earnings;
 
         public static void Main(string[] args)
         {
@@ -47,7 +47,7 @@
             simulationTimer.Elapsed += (sender, eventArgs) =>
                 {
                     time += DeltaTime;
-                    EventBus.Publish(new PayloadEvent<double>(time));
+                    EventBus.Publish(TimeChangedEvent.Raise(time));
 
                     Update(time);
 
@@ -107,8 +107,21 @@
 
         private static void SubscribeEvents()
         {
+            EventBus.Subscribe<TimeChangedEvent>(OnTimeChanged);
             EventBus.Subscribe<CustomerArrivedEvent>(OnCustomerArrived);
             EventBus.Subscribe<CustomerLeftEvent>(OnCustomerLeft);
+        }
+
+        private static void OnTimeChanged(TimeChangedEvent obj)
+        {
+            CustomerQueue
+                .Where(x => x.ToleranceTime < obj.Time - x.ArrivalTime)
+                .ToList()
+                .ForEach(x =>
+                    {
+                        CustomerQueue.Remove(x);
+                        Console.WriteLine($"Customer ({x.Id}) unhappy. Leaving.");
+                    });
         }
 
         private static void OnCustomerLeft(CustomerLeftEvent obj)
@@ -118,11 +131,14 @@
 
         private static void OnCustomerArrived(CustomerArrivedEvent obj)
         {
+            var serviceTime = RandomGenerator.NextDouble() * 4d;
             var newCustomer = new Customer
             {
                 ArrivalTime = obj.ArrivalTime,
-                ServiceTime = RandomGenerator.NextDouble() * 4d
+                ServiceTime = serviceTime,
+                ToleranceTime = serviceTime + (RandomGenerator.NextDouble() * 3d)
             };
+
             CustomerQueue.Enqueue(newCustomer);
 
             Console.WriteLine($"{obj.ArrivalTime:f2}: New customer ({newCustomer.Id}) arrived at {newCustomer.ArrivalTime}. {CustomerQueue.Count} customers waiting.");
