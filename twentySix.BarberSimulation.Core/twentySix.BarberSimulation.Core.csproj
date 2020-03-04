@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Enums\WorkingStatus.cs" />
+    <Compile Include="Events\CustomerLeftEvent.cs" />
     <Compile Include="Events\CustomerArrivedEvent.cs" />
     <Compile Include="Models\Customer.cs" />
     <Compile Include="Models\Barber.cs" />

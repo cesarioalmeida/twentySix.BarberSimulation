@@ -15,6 +15,8 @@
 
     public class Program
     {
+        private const double PriceOfCut = 15d;
+
         private static readonly IEventBus EventBus = new EventBus();
 
         private static readonly double DeltaTime = 0.1d;
@@ -25,6 +27,10 @@
 
         private static readonly Random RandomGenerator = new Random();
 
+        private static readonly List<double> TotalTime = new List<double>();
+
+        private static double earnings = 0d;
+
         public static void Main(string[] args)
         {
             Console.Clear();
@@ -34,9 +40,9 @@
 
             Initialize();
 
-            var time = 0d;
+            var time = 8d;
 
-            var simulationTimer = new Timer { AutoReset = true, Interval = 1000 };
+            var simulationTimer = new Timer { AutoReset = true, Interval = 100 };
 
             simulationTimer.Elapsed += (sender, eventArgs) =>
                 {
@@ -44,6 +50,14 @@
                     EventBus.Publish(new PayloadEvent<double>(time));
 
                     Update(time);
+
+                    if (time > 19)
+                    {
+                        simulationTimer.Stop();
+                        Console.WriteLine("No more business today.");
+                        Console.WriteLine($"Total earnings: {earnings}");
+                        Console.WriteLine($"Average time spent: {TotalTime.Average()}");
+                    }
                 };
 
             simulationTimer.Start();
@@ -54,7 +68,7 @@
         private static void Update(double time)
         {
             // customers
-            if (RandomGenerator.NextDouble() > 0.7)
+            if (RandomGenerator.NextDouble() > 0.8)
             {
                 EventBus.Publish(CustomerArrivedEvent.Raise(time));
             }
@@ -65,12 +79,16 @@
                 if (barber.Status == WorkingStatus.Idle && CustomerQueue.Any())
                 {
                     barber.StartWithCustomer(time, CustomerQueue.Dequeue());
-                    Console.WriteLine($"Barber {barber.Id} starting to serve customer {barber.ServingCustomer.Id}");
+                    Console.WriteLine($"{time:f2}: Barber ({barber.Id}) starting to serve customer ({barber.ServingCustomer.Id})");
                 }
 
                 if (barber.Status == WorkingStatus.Busy
                     && time - barber.ServiceStart > barber.ServingCustomer.ServiceTime)
                 {
+                    TotalTime.Add(time - barber.ServingCustomer.ArrivalTime);
+
+                    EventBus.Publish(CustomerLeftEvent.Raise(time, barber.ServingCustomer));
+
                     barber.Free();
                 }
             }
@@ -79,9 +97,10 @@
         private static void Initialize()
         {
             Barbers.Add(new Barber());
-            Barbers.ForEach(x => Console.WriteLine($"Added Barber {x.Id}"));
+            Barbers.Add(new Barber());
+            Console.WriteLine($"Added {Barbers.Count} barbers");
 
-            Console.WriteLine("Open for business");
+            Console.WriteLine("Opened for business");
 
             SubscribeEvents();
         }
@@ -89,6 +108,12 @@
         private static void SubscribeEvents()
         {
             EventBus.Subscribe<CustomerArrivedEvent>(OnCustomerArrived);
+            EventBus.Subscribe<CustomerLeftEvent>(OnCustomerLeft);
+        }
+
+        private static void OnCustomerLeft(CustomerLeftEvent obj)
+        {
+            earnings += PriceOfCut;
         }
 
         private static void OnCustomerArrived(CustomerArrivedEvent obj)
@@ -96,11 +121,11 @@
             var newCustomer = new Customer
             {
                 ArrivalTime = obj.ArrivalTime,
-                ServiceTime = RandomGenerator.NextDouble() * 5d
+                ServiceTime = RandomGenerator.NextDouble() * 4d
             };
             CustomerQueue.Enqueue(newCustomer);
 
-            Console.WriteLine($"New customer ({newCustomer.Id}) arrived at {newCustomer.ArrivalTime}. {CustomerQueue.Count} customers waiting.");
+            Console.WriteLine($"{obj.ArrivalTime:f2}: New customer ({newCustomer.Id}) arrived at {newCustomer.ArrivalTime}. {CustomerQueue.Count} customers waiting.");
         }
     }
 }
