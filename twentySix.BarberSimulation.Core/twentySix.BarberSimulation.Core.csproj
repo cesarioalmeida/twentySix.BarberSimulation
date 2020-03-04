@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Redbus, Version=1.0.8.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\twentySix.BarberSimulation\packages\Redbus.1.0.8\lib\net45\Redbus.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -41,7 +44,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Enums\WorkingStatus.cs" />
+    <Compile Include="Events\CustomerArrivedEvent.cs" />
+    <Compile Include="Models\Customer.cs" />
+    <Compile Include="Models\Barber.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
