@@ -5,25 +5,19 @@
     using System.Linq;
     using System.Timers;
 
-    using Redbus;
-    using Redbus.Interfaces;
-
-    using twentySix.BarberSimulation.Core.Enums;
     using twentySix.BarberSimulation.Core.Events;
-    using twentySix.BarberSimulation.Core.Framework;
     using twentySix.BarberSimulation.Core.Models;
+    using twentySix.BarberSimulation.Core.Providers;
 
     public class Program
     {
         private const double PriceOfCut = 15d;
 
-        private static readonly IEventBus EventBus = new EventBus();
+        private const double MaxHrs = 20d;
 
         private static readonly double DeltaTime = 0.1d;
 
         private static readonly List<Barber> Barbers = new List<Barber>();
-
-        private static readonly ExtendedQueue<Customer> CustomerQueue = new ExtendedQueue<Customer>();
 
         private static readonly Random RandomGenerator = new Random();
 
@@ -40,23 +34,24 @@
 
             Initialize();
 
-            var time = 8d;
+            var time = 0d;
 
-            var simulationTimer = new Timer { AutoReset = true, Interval = 100 };
+            var simulationTimer = new Timer { AutoReset = true, Interval = 50 };
 
             simulationTimer.Elapsed += (sender, eventArgs) =>
                 {
                     time += DeltaTime;
-                    EventBus.Publish(TimeChangedEvent.Raise(time));
+                    EventBusProvider.Instance.EventBus.Publish(TimeChangedEvent.Raise(time));
 
                     Update(time);
 
-                    if (time > 19)
+                    if (time > MaxHrs)
                     {
                         simulationTimer.Stop();
                         Console.WriteLine("No more business today.");
                         Console.WriteLine($"Total earnings: {earnings}");
                         Console.WriteLine($"Average time spent: {TotalTime.Average()}");
+                        Console.WriteLine($"Average earning/hr: {earnings / MaxHrs:f2}");
                     }
                 };
 
@@ -70,27 +65,7 @@
             // customers
             if (RandomGenerator.NextDouble() > 0.8)
             {
-                EventBus.Publish(CustomerArrivedEvent.Raise(time));
-            }
-
-            // barbers
-            foreach (var barber in Barbers)
-            {
-                if (barber.Status == WorkingStatus.Idle && CustomerQueue.Any())
-                {
-                    barber.StartWithCustomer(time, CustomerQueue.Dequeue());
-                    Console.WriteLine($"{time:f2}: Barber ({barber.Id}) starting to serve customer ({barber.ServingCustomer.Id})");
-                }
-
-                if (barber.Status == WorkingStatus.Busy
-                    && time - barber.ServiceStart > barber.ServingCustomer.ServiceTime)
-                {
-                    TotalTime.Add(time - barber.ServingCustomer.ArrivalTime);
-
-                    EventBus.Publish(CustomerLeftEvent.Raise(time, barber.ServingCustomer));
-
-                    barber.Free();
-                }
+                EventBusProvider.Instance.EventBus.Publish(CustomerArrivedEvent.Raise(time));
             }
         }
 
@@ -107,26 +82,27 @@
 
         private static void SubscribeEvents()
         {
-            EventBus.Subscribe<TimeChangedEvent>(OnTimeChanged);
-            EventBus.Subscribe<CustomerArrivedEvent>(OnCustomerArrived);
-            EventBus.Subscribe<CustomerLeftEvent>(OnCustomerLeft);
+            EventBusProvider.Instance.EventBus.Subscribe<TimeChangedEvent>(OnTimeChanged);
+            EventBusProvider.Instance.EventBus.Subscribe<CustomerArrivedEvent>(OnCustomerArrived);
+            EventBusProvider.Instance.EventBus.Subscribe<CustomerLeftEvent>(OnCustomerLeft);
         }
 
         private static void OnTimeChanged(TimeChangedEvent obj)
         {
-            CustomerQueue
+            CustomerQueueProvider.Instance.Queue
                 .Where(x => x.ToleranceTime < obj.Time - x.ArrivalTime)
                 .ToList()
                 .ForEach(x =>
                     {
-                        CustomerQueue.Remove(x);
-                        Console.WriteLine($"Customer ({x.Id}) unhappy. Leaving.");
+                        CustomerQueueProvider.Instance.Queue.Remove(x);
+                        Console.WriteLine($"{obj.Time:f2}: Customer ({x.Id}) unhappy. Leaving.");
                     });
         }
 
         private static void OnCustomerLeft(CustomerLeftEvent obj)
         {
             earnings += PriceOfCut;
+            TotalTime.Add(obj.DepartureTime - obj.Customer.ArrivalTime);
         }
 
         private static void OnCustomerArrived(CustomerArrivedEvent obj)
@@ -139,9 +115,9 @@
                 ToleranceTime = serviceTime + (RandomGenerator.NextDouble() * 3d)
             };
 
-            CustomerQueue.Enqueue(newCustomer);
+            CustomerQueueProvider.Instance.Queue.Enqueue(newCustomer);
 
-            Console.WriteLine($"{obj.ArrivalTime:f2}: New customer ({newCustomer.Id}) arrived at {newCustomer.ArrivalTime}. {CustomerQueue.Count} customers waiting.");
+            Console.WriteLine($"{obj.ArrivalTime:f2}: New customer ({newCustomer.Id}). {CustomerQueueProvider.Instance.Queue.Count} customers waiting.");
         }
     }
 }
