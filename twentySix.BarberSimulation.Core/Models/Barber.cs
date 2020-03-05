@@ -15,7 +15,7 @@
         {
             this.Id = ++id;
 
-            EventBusProvider.Instance.EventBus.Subscribe<TimeChangedEvent>(OnTimeChanged);
+            EventBusProvider.Instance.EventBus.Subscribe<TimeChangedEvent>(this.OnTimeChanged);
         }
 
         public int Id { get; }
