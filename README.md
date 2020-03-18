@@ -1,1 +1,2 @@
-Barber Simulation - A simple event-driven barber simulation
+## Barber Simulation
+A simple event-driven barber simulation
