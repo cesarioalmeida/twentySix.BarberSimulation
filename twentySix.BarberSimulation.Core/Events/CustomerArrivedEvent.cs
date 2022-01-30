@@ -4,16 +4,10 @@
 
     public class CustomerArrivedEvent : EventBase
     {
-        protected CustomerArrivedEvent(double time)
-        {
-            this.ArrivalTime = time;
-        }
-
+        protected CustomerArrivedEvent(double time) => ArrivalTime = time;
+        
         public double ArrivalTime { get; }
 
-        public static CustomerArrivedEvent Raise(double time)
-        {
-            return new CustomerArrivedEvent(time);
-        }
+        public static CustomerArrivedEvent Raise(double time) => new(time);
     }
 }

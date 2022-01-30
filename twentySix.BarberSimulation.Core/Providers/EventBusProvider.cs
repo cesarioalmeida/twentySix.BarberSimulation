@@ -5,13 +5,13 @@
 
     public class EventBusProvider
     {
-        private static EventBusProvider instance;
+        private static EventBusProvider _instance;
 
         private EventBusProvider()
         {
         }
 
-        public static EventBusProvider Instance => instance ?? (instance = new EventBusProvider());
+        public static EventBusProvider Instance => _instance ??= new EventBusProvider();
 
         public IEventBus EventBus { get; } = new EventBus();
     }

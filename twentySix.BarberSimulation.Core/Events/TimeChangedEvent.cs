@@ -6,14 +6,11 @@
     {
         protected TimeChangedEvent(double time)
         {
-            this.Time = time;
+            Time = time;
         }
 
         public double Time { get; }
 
-        public static TimeChangedEvent Raise(double time)
-        {
-            return new TimeChangedEvent(time);
-        }
+        public static TimeChangedEvent Raise(double time) => new(time);
     }
 }

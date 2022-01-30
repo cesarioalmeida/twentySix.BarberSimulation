@@ -5,9 +5,9 @@
     using System.Linq;
     using System.Timers;
 
-    using twentySix.BarberSimulation.Core.Events;
-    using twentySix.BarberSimulation.Core.Models;
-    using twentySix.BarberSimulation.Core.Providers;
+    using Core.Events;
+    using Core.Models;
+    using Core.Providers;
 
     public class Program
     {
@@ -17,15 +17,15 @@
 
         private static readonly double DeltaTime = 0.1d;
 
-        private static readonly List<Barber> Barbers = new List<Barber>();
+        private static readonly List<Barber> Barbers = new();
 
-        private static readonly Random RandomGenerator = new Random();
+        private static readonly Random RandomGenerator = new();
 
-        private static readonly List<double> TotalTime = new List<double>();
+        private static readonly List<double> TotalTime = new();
 
         private static double earnings;
 
-        public static void Main(string[] args)
+        public static void Main()
         {
             Console.Clear();
             Console.WriteLine("--- Barber Simulations ---");
@@ -38,7 +38,7 @@
 
             var simulationTimer = new Timer { AutoReset = true, Interval = 50 };
 
-            simulationTimer.Elapsed += (sender, eventArgs) =>
+            simulationTimer.Elapsed += (_, _) =>
                 {
                     time += DeltaTime;
                     EventBusProvider.Instance.EventBus.Publish(TimeChangedEvent.Raise(time));

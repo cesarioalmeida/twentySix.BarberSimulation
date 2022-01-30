@@ -2,12 +2,9 @@
 {
     public class Customer
     {
-        private static int id;
+        private static int _id;
 
-        public Customer()
-        {
-            this.Id = ++id;
-        }
+        public Customer() => Id = ++_id;
 
         public int Id { get; }
 
